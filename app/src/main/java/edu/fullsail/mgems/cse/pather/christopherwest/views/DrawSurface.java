@@ -1,8 +1,6 @@
-package edu.fullsail.mgems.cse.pather.christopherwest;
+package edu.fullsail.mgems.cse.pather.christopherwest.views;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PointF;
@@ -12,15 +10,19 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Toast;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+
+import edu.fullsail.mgems.cse.pather.christopherwest.models.NavCell;
 
 
 public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, View.OnTouchListener {
+    private static final int CELL_SIZE = 64;
+    private Rect mScreenDim;
     private Context context;
+    private int mCellCols = 0;
+    private int mCellRows = 0;
+    private NavCell[][] mCells;
+    private NavCell mCellStart;
+    private NavCell mCellEnd;
 
 
     public DrawSurface(Context context) {
@@ -43,6 +45,7 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
         setWillNotDraw(false);
         getHolder().addCallback(this);
         setOnTouchListener(this);
+        mScreenDim = new Rect();
     }
 
     @Override
@@ -55,9 +58,11 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
     public void surfaceCreated(SurfaceHolder holder) {
         Canvas c = holder.lockCanvas();
         if (c != null) {
-            // mFieldDim.set(0,0, c.getWidth(), c.getHeight());
+            mScreenDim.set(0,0, c.getWidth(), c.getHeight());
         }
         holder.unlockCanvasAndPost(c);
+
+        loadNewMap();
         invalidate();
     }
 
@@ -76,5 +81,33 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
         PointF touchCoords = new PointF(event.getX(),event.getY());
         invalidate();
         return super.onTouchEvent(event);
+    }
+
+    private void loadNewMap() {
+        // calculate number of cells based on screen
+        mCellCols = (int)Math.ceil((float)mScreenDim.width() / (float)CELL_SIZE);
+        mCellRows = (int)Math.ceil((float)mScreenDim.height() / (float)CELL_SIZE);
+
+        //create cells
+        mCells = new NavCell[mCellRows][mCellCols];
+        for(int i = 0; i < mCellRows; i++){
+            for (int j = 0; j < mCellCols; j++) {
+                mCells[i][j] = new NavCell();
+                mCells[i][j].setBounds(i,j,CELL_SIZE);
+            }
+        }
+
+        // set start cell
+        mCellStart = mCells[mCellRows/4][mCellCols/2];
+        mCellEnd = null;
+
+        // Set Blockers
+        int midRow = mCellRows / 2;
+        for (int i = 0; i < mCellRows; i++) {
+            for (int j = 0; j < mCellCols; j++) {
+                if (i == midRow && i > 0 && i < mCellCols-1)
+                mCells[i][j].setImpassable();
+            }
+        }
     }
 }

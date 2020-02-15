@@ -4,10 +4,11 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.View;
+import edu.fullsail.mgems.cse.pather.christopherwest.views.DrawSurface;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-        private DrawSurface ds;
+    private DrawSurface ds;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

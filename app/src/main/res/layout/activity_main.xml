@@ -6,7 +6,7 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <edu.fullsail.mgems.cse.pather.christopherwest.DrawSurface
+    <edu.fullsail.mgems.cse.pather.christopherwest.views.DrawSurface
         android:layout_width="fill_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
