@@ -2,7 +2,6 @@ package edu.fullsail.mgems.cse.pather.christopherwest.models;
 
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.RectF;
 
 import java.util.Comparator;
 
@@ -20,6 +19,7 @@ public class NavCell {
 
     public NavCell() {
         this.mPassable = true;
+        mNeighbors = new NavCell[4];
     }
 
     public Rect getBounds() {
@@ -28,14 +28,11 @@ public class NavCell {
 
     public void setBounds(Rect mBounds) {
         this.mBounds = mBounds;
+        this.mCentroid = new Point(mBounds.centerX(), mBounds.centerY());
     }
 
     public Point getCentroid() {
         return mCentroid;
-    }
-
-    public void setCentroid(Point mCentroid) {
-        this.mCentroid = mCentroid;
     }
 
     public boolean isPassable() {
@@ -104,6 +101,7 @@ public class NavCell {
 
     private void setBounds(int left, int top, int right, int bottom) {
         mBounds = new Rect(left, top, right, bottom);
+        mCentroid = new Point(mBounds.centerX(), mBounds.centerY());
     }
     public void setBounds(int row, int column, int cellSize) {
         setBounds(
@@ -118,5 +116,9 @@ public class NavCell {
     }
     public void setImpassable() {
         setPassable(false);
+    }
+
+    public void setNeighbor(int i, NavCell navCell) {
+        this.mNeighbors[i] = navCell;
     }
 }
