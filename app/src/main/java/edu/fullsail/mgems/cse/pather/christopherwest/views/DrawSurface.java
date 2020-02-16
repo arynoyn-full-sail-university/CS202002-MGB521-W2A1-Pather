@@ -308,7 +308,7 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
     }
 
     public void loadNewMap() {
-        mNoSolution = false;
+        resetGrid();
         // calculate number of cells based on screen
         mCellCols = (int)Math.ceil((float)mScreenDim.width() / (float)CELL_SIZE);
         mCellRows = (int)Math.ceil((float)mScreenDim.height() / (float)CELL_SIZE);
