@@ -1,6 +1,8 @@
 package edu.fullsail.mgems.cse.pather.christopherwest.views;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -44,6 +46,8 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
     private boolean mDrawVisitedCells;
     private boolean mAddExtraBlockers;
     private SharedPreferences.OnSharedPreferenceChangeListener listner;
+    private boolean mNoSolution;
+    private float mPercentageBlocked;
 
 
     public DrawSurface(Context context) {
@@ -75,6 +79,18 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
         mDrawVisitedCells = sharedPreferences.getBoolean("display_visited_cells", false);
         mAddExtraBlockers = sharedPreferences.getBoolean("add_extra_blockers", false);
+        try {
+            mPercentageBlocked = getBlockerPercentChance(Float.parseFloat(sharedPreferences.getString("blocker_percentage", "10")));
+        } catch (Exception e){
+            Log.e(TAG, "initialize: error converting blocker percentage", e );
+            mPercentageBlocked = getBlockerPercentChance(10);
+        }
+
+        mNoSolution = false;
+    }
+
+    private float getBlockerPercentChance(float stored_percent) {
+        return Math.abs((stored_percent / 100) - 1.0f);
     }
 
     @Override
@@ -109,13 +125,27 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
         }
 
         // draw optimal path
-        if (mCellEnd != null) {
-            NavCell current = mCellEnd;
-            do {
-                DrawNonBlockingCell(canvas, current, Color.GREEN, Color.LTGRAY );
-                current = current.getPrevious();
-            } while(current.getPrevious() != null);
-            DrawNonBlockingCell(canvas, current, Color.GREEN, Color.LTGRAY );
+        if (!mNoSolution) {
+            if (mCellEnd != null) {
+                NavCell current = mCellEnd;
+                do {
+                    DrawNonBlockingCell(canvas, current, Color.GREEN, Color.LTGRAY);
+                    current = current.getPrevious();
+                } while (current.getPrevious() != null);
+                DrawNonBlockingCell(canvas, current, Color.GREEN, Color.LTGRAY);
+            }
+        } else {
+            //throw error
+            AlertDialog.Builder dialog = new AlertDialog.Builder(mContext);
+            dialog.setTitle("No Solution");
+            dialog.setMessage("There is no path between the start cell and the end cell.");
+            dialog.setPositiveButton(" OK ", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            dialog.show();
         }
 
         // draw starting point
@@ -196,18 +226,30 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
                 NavCell clickedCell = mCells[(int) touchCoords.y / CELL_SIZE][(int) touchCoords.x / CELL_SIZE]; //[rows][columns] = [verticalOffset (y-axis)][horizontalOffset (x-axis)]
         if (!clickedCell.isPassable()) {
             //throw error
-        }
-
-        if (mCellEnd == null) {
-            mCellEnd = clickedCell;
-            calculateAStar(mCellStart, mCellEnd);
+            AlertDialog.Builder dialog = new AlertDialog.Builder(mContext);
+            dialog.setTitle("Invalid Selection");
+            dialog.setMessage("You cannot choose a blocker cell for the start or end cell");
+            dialog.setPositiveButton(" OK ", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            dialog.show();
         } else {
-            resetGrid();
-            mCellStart = clickedCell;
-            mCellEnd = null;
+
+            if (mCellEnd == null) {
+                mCellEnd = clickedCell;
+                calculateAStar(mCellStart, mCellEnd);
+            } else {
+                resetGrid();
+                mCellStart = clickedCell;
+                mCellEnd = null;
+            }
+
+            invalidate();
         }
 
-        invalidate();
         return super.onTouchEvent(event);
     }
 
@@ -218,6 +260,7 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
             }
         }
         mVisitedCells = new HashSet<>();
+        mNoSolution = false;
     }
 
     private void calculateAStar(NavCell mCellStart, NavCell mCellEnd) {
@@ -250,6 +293,9 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
                 }
             }
         }
+        if (mCellEnd.getPrevious() == null){
+            mNoSolution = true;
+        }
     }
 
     private float aStarHeuristic(NavCell from, NavCell to) {
@@ -262,6 +308,7 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
     }
 
     public void loadNewMap() {
+        mNoSolution = false;
         // calculate number of cells based on screen
         mCellCols = (int)Math.ceil((float)mScreenDim.width() / (float)CELL_SIZE);
         mCellRows = (int)Math.ceil((float)mScreenDim.height() / (float)CELL_SIZE);
@@ -282,7 +329,7 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
                 if (i == midRow && j > 0 && j < mCellCols-1) {
                     mCells[i][j].setImpassable();
                 } else if (i != midRow && mAddExtraBlockers) {
-                    mCells[i][j].setPassable(Math.random() < 0.9);
+                    mCells[i][j].setPassable(Math.random() < mPercentageBlocked);
                 }
             }
         }
@@ -323,6 +370,14 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
                 mAddExtraBlockers = sharedPreferences.getBoolean(key, false);
             } catch (Exception e) {
                 Log.e(TAG, "onSharedPreferenceChanged: exception", e);
+            }
+        }
+        if (key.equals("blocker_percentage")){
+            try {
+                mPercentageBlocked = getBlockerPercentChance(Float.parseFloat(sharedPreferences.getString(key, "10")));
+            } catch (Exception e){
+                Log.e(TAG, "initialize: error converting blocker percentage", e );
+                mPercentageBlocked = getBlockerPercentChance(10);
             }
         }
     }

@@ -22,6 +22,13 @@
         <CheckBoxPreference android:key="add_extra_blockers"
             android:title="@string/add_extra_blockers"
             android:summary="@string/add_extra_blockers_summary" />
+        <EditTextPreference android:defaultValue="10"
+            android:key="blocker_percentage"
+            android:title="% blocked"
+            android:summary="Percentage of the board occupied by additional blockers"
+            android:inputType="numberDecimal"
+            android:digits="0123456789"
+            android:dependency="add_extra_blockers"/>
 
         <CheckBoxPreference android:key="display_visited_cells"
             android:title="@string/display_visited_cells"
