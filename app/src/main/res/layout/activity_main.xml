@@ -21,6 +21,13 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_weight="0.5"
+            android:text="New Map"
+            android:id="@+id/btnNewMap"/>
+
+        <Button
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight="0.5"
             android:text="Credits"
             android:id="@+id/btnCredits"/>
 

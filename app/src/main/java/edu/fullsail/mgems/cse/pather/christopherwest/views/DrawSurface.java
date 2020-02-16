@@ -1,6 +1,7 @@
 package edu.fullsail.mgems.cse.pather.christopherwest.views;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -9,11 +10,15 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.preference.PreferenceManager;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+
+import androidx.preference.Preference;
 
 import java.util.HashSet;
 import java.util.PriorityQueue;
@@ -21,8 +26,10 @@ import java.util.PriorityQueue;
 import edu.fullsail.mgems.cse.pather.christopherwest.R;
 import edu.fullsail.mgems.cse.pather.christopherwest.models.NavCell;
 
+import static android.content.ContentValues.TAG;
 
-public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, View.OnTouchListener {
+
+public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, View.OnTouchListener, SharedPreferences.OnSharedPreferenceChangeListener {
     private static final int CELL_SIZE = 64;
     private Rect mScreenDim;
     private Context mContext;
@@ -35,6 +42,8 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
     private Bitmap mBMPEnd;
     HashSet<NavCell> mVisitedCells;
     private boolean mDrawVisitedCells;
+    private boolean mAddExtraBlockers;
+    private SharedPreferences.OnSharedPreferenceChangeListener listner;
 
 
     public DrawSurface(Context context) {
@@ -61,7 +70,11 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
         mBMPStart = BitmapFactory.decodeResource(context.getResources(), R.drawable.start);
         mBMPEnd = BitmapFactory.decodeResource(context.getResources(), R.drawable.end);
         mVisitedCells = new HashSet<>();
-        mDrawVisitedCells = false;
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(mContext);
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+        mDrawVisitedCells = sharedPreferences.getBoolean("display_visited_cells", false);
+        mAddExtraBlockers = sharedPreferences.getBoolean("add_extra_blockers", false);
     }
 
     @Override
@@ -165,7 +178,6 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
         holder.unlockCanvasAndPost(c);
 
         loadNewMap();
-        invalidate();
     }
 
     @Override
@@ -249,7 +261,7 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
         return (float)Math.sqrt(dx+dy);
     }
 
-    private void loadNewMap() {
+    public void loadNewMap() {
         // calculate number of cells based on screen
         mCellCols = (int)Math.ceil((float)mScreenDim.width() / (float)CELL_SIZE);
         mCellRows = (int)Math.ceil((float)mScreenDim.height() / (float)CELL_SIZE);
@@ -263,16 +275,15 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
             }
         }
 
-        // set start cell
-        mCellStart = mCells[mCellRows/4][mCellCols/2];
-        mCellEnd = null;
-
         // Set Blockers
         int midRow = mCellRows / 2;
         for (int i = 0; i < mCellRows; i++) {
             for (int j = 0; j < mCellCols; j++) {
-                if (i == midRow && j > 0 && j < mCellCols-1)
-                mCells[i][j].setImpassable();
+                if (i == midRow && j > 0 && j < mCellCols-1) {
+                    mCells[i][j].setImpassable();
+                } else if (i != midRow && mAddExtraBlockers) {
+                    mCells[i][j].setPassable(Math.random() < 0.9);
+                }
             }
         }
 
@@ -283,6 +294,35 @@ public class DrawSurface extends SurfaceView implements SurfaceHolder.Callback, 
                 if (i > 0 && mCells[i-1][j].isPassable()){mCells[i][j].setNeighbor(1, mCells[i-1][j]);}
                 if (j < mCellCols-1 && mCells[i][j+1].isPassable()){mCells[i][j].setNeighbor(2, mCells[i][j+1]);}
                 if (i < mCellRows-1 && mCells[i+1][j].isPassable()){mCells[i][j].setNeighbor(3, mCells[i+1][j]);}
+            }
+        }
+
+        // set start cell
+        mCellStart = mCells[mCellRows/4][mCellCols/2];
+        if (!mCellStart.isPassable()){
+            while(!mCellStart.isPassable()){
+                mCellStart = mCells[(int)(Math.random() * mCellRows)][(int)(Math.random() * mCellCols)];
+            }
+        }
+        mCellEnd = null;
+
+        invalidate();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals("display_visited_cells")){
+            try {
+                mDrawVisitedCells = sharedPreferences.getBoolean(key, false);
+            } catch (Exception e) {
+                Log.e(TAG, "onSharedPreferenceChanged: exception", e);
+            }
+        }
+        if (key.equals("add_extra_blockers")){
+            try {
+                mAddExtraBlockers = sharedPreferences.getBoolean(key, false);
+            } catch (Exception e) {
+                Log.e(TAG, "onSharedPreferenceChanged: exception", e);
             }
         }
     }

@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">Pather_ChristopherWest</string>
+    <string name="app_about_info">Created By\nChristopher West\nMBG521-O | Computer Science for Engineers\n02/15/2020
+    </string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Preference Titles -->
+    <string name="general_header">General</string>
+    <string name="about_header">About</string>
+
+    <!-- General Preferences -->
+    <string name="add_extra_blockers">Add Extra Blockers</string>
+    <string name="add_extra_blockers_summary">Choose to add more blockers than the initial center row</string>
+    <string name="display_visited_cells">Draw Visited Cells</string>
+    <string name="display_visited_cells_summary">Choose to show visited cells when displaying the grid</string>
+    <string name="app_about_title">Credits:</string>
 </resources>
