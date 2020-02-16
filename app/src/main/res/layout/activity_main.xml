@@ -4,7 +4,7 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:mContext=".MainActivity">
 
     <edu.fullsail.mgems.cse.pather.christopherwest.views.DrawSurface
         android:layout_width="fill_parent"
